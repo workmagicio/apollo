@@ -13,14 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: Publish Docker Image X
+name: Publish Docker Image
 
 on:
   workflow_dispatch:
     inputs:
-      account:
-        description: 'account'
-        required: true
       version:
         description: 'version'
         required: true
@@ -37,13 +34,13 @@ jobs:
         name: Check tags
         run: |
           if [[ ${{ github.event.inputs.version }} == *-SNAPSHOT ]]; then
-            echo "apollo-config-tags=${{ github.event.inputs.account }}/apollo-configservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "apollo-admin-tags=${{ github.event.inputs.account }}/apollo-adminservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "apollo-portal-tags=${{ github.event.inputs.account }}/apollo-portal:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "apollo-config-tags=apolloconfig/apollo-configservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "apollo-admin-tags=apolloconfig/apollo-adminservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "apollo-portal-tags=apolloconfig/apollo-portal:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            echo "apollo-config-tags=${{ github.event.inputs.account }}/apollo-configservice:${{ github.event.inputs.version }},${{ github.event.inputs.account }}/apollo-configservice:latest" >> $GITHUB_OUTPUT
-            echo "apollo-admin-tags=${{ github.event.inputs.account }}/apollo-adminservice:${{ github.event.inputs.version }},${{ github.event.inputs.account }}/apollo-adminservice:latest" >> $GITHUB_OUTPUT
-            echo "apollo-portal-tags=${{ github.event.inputs.account }}/apollo-portal:${{ github.event.inputs.version }},${{ github.event.inputs.account }}/apollo-portal:latest" >> $GITHUB_OUTPUT
+            echo "apollo-config-tags=apolloconfig/apollo-configservice:${{ github.event.inputs.version }},apolloconfig/apollo-configservice:latest" >> $GITHUB_OUTPUT
+            echo "apollo-admin-tags=apolloconfig/apollo-adminservice:${{ github.event.inputs.version }},apolloconfig/apollo-adminservice:latest" >> $GITHUB_OUTPUT
+            echo "apollo-portal-tags=apolloconfig/apollo-portal:${{ github.event.inputs.version }},apolloconfig/apollo-portal:latest" >> $GITHUB_OUTPUT
           fi
   publish:
     needs: check
@@ -60,9 +57,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_HUB_USER_NAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
