@@ -27,6 +27,7 @@
     <link rel="stylesheet" type="text/css" href="vendor/jquery-plugin/textareafullscreen.css">
     <link rel="stylesheet" type="text/css" media='all' href="vendor/angular/loading-bar.min.css">
     <link rel="stylesheet" type="text/css" href="styles/common-style.css">
+    <link rel="stylesheet" type="text/css" href="vendor/json-diff/index.css">
 </head>
 
 <body>
@@ -137,8 +138,8 @@
                             apollo-href="'app/setting.html?#/appid=' + pageContext.appId"></apolloentrance>
 
                         <apolloentrance apollo-title="'Config.AccessKeyManage' | translate"
-                                        apollo-img-src="'accesskey-manage'"
-                                        apollo-href="'app/access_key.html?#/appid=' + pageContext.appId"></apolloentrance>
+                            apollo-img-src="'accesskey-manage'"
+                            apollo-href="'app/access_key.html?#/appid=' + pageContext.appId"></apolloentrance>
 
                         <a class="list-group-item" ng-show="missEnvs.length > 0" ng-click="createAppInMissEnv()">
                             <div class="row icon-text icon-plus-orange">
@@ -181,7 +182,6 @@
                 </div>
             </div>
         </div>
-
         <!--具体配置信息-->
         <!--namespaces-->
         <div class="config-item-container hide" ng-class="{'view-mode-1': viewMode == 1, 'view-mode-2': viewMode == 2}"
@@ -224,8 +224,7 @@
             <apollonspanel ng-repeat="namespace in namespaces" namespace="namespace" app-id="pageContext.appId"
                 env="pageContext.env" lock-check="lockCheck" cluster="pageContext.clusterName" user="currentUser"
                 pre-release-ns="prepareReleaseNamespace" create-item="createItem" edit-item="editItem"
-                pre-delete-item="preDeleteItem" pre-revoke-item="preRevokeItem"
-                show-text="showText"
+                pre-delete-item="preDeleteItem" pre-revoke-item="preRevokeItem" show-text="showText"
                 show-no-modify-permission-dialog="showNoModifyPermissionDialog" show-body="namespaces.length < 3"
                 lazy-load="namespaces.length > 10" pre-create-branch="preCreateBranch"
                 pre-delete-branch="preDeleteBranch">
@@ -233,6 +232,7 @@
 
             <releasemodal app-id="pageContext.appId" env="pageContext.env" cluster="pageContext.clusterName">
             </releasemodal>
+            <diffviewer app-id="pageContext.appId" env="pageContext.env" cluster="pageContext.clusterName"></diffviewer>
 
             <itemmodal to-operation-namespace="toOperationNamespace" app-id="pageContext.appId" env="pageContext.env"
                 cluster="pageContext.clusterName" item="item">
@@ -341,7 +341,7 @@
                 apollo-title="'Config.RevokeItem.DialogTitle' | translate"
                 apollo-detail="'Config.RevokeItem.DialogContent' | translate:this" apollo-show-cancel-btn="true"
                 apollo-confirm="revokeItem">
-           </apolloconfirmdialog>
+            </apolloconfirmdialog>
 
 
             <div class="modal fade" id="createBranchTips" tabindex="-1" role="dialog">
@@ -355,8 +355,8 @@
                         <div class="modal-body" ng-bind-html="'Config.CreateBranchTips.DialogContent' | translate">
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-default"
-                                data-dismiss="modal">{{'Common.Cancel' | translate}}</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">{{'Common.Cancel' |
+                                translate}}</button>
                             <button type="button" class="btn btn-primary" data-dismiss="modal"
                                 ng-click="createBranch()">{{'Common.Ok' | translate}}</button>
                         </div>
@@ -409,7 +409,7 @@
     <script src="vendor/ui-ace/mode-json.js" type="text/javascript"></script>
     <script src="vendor/ui-ace/worker-json.js" type="text/javascript"></script>
     <script src="vendor/ui-ace/worker-xml.js" type="text/javascript"></script>
-
+    <script src="vendor/json-diff/diff.js" type="text/javascript"></script>
 
 
     <!--valdr-->
@@ -451,6 +451,7 @@
     <script type="application/javascript" src="scripts/directive/publish-deny-modal-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/delete-namespace-modal-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/import-namespace-modal-directive.js"></script>
+    <script type="application/javascript" src="scripts/directive/diff-viewer-directive.js"></script>
 
     <!--controller-->
     <script type="application/javascript" src="scripts/controller/config/ConfigNamespaceController.js"></script>
@@ -460,6 +461,7 @@
     <script type="application/javascript" src="scripts/PageCommon.js"></script>
 
     <script src="scripts/valdr.js" type="text/javascript"></script>
+
 </body>
 
 </html>
