@@ -37,13 +37,13 @@ jobs:
         name: Check tags
         run: |
           if [[ ${{ github.event.inputs.version }} == *-SNAPSHOT ]]; then
-            echo "apollo-config-tags=${{ github.event.inputs.account }}/apollo-configservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "apollo-admin-tags=${{ github.event.inputs.account }}/apollo-adminservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "apollo-portal-tags=${{ github.event.inputs.account }}/apollo-portal:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "apollo-config-tags=${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-configservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "apollo-admin-tags=${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-adminservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "apollo-portal-tags=${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-portal:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            echo "apollo-config-tags=${{ github.event.inputs.account }}/apollo-configservice:${{ github.event.inputs.version }},${{ github.event.inputs.account }}/apollo-configservice:latest" >> $GITHUB_OUTPUT
-            echo "apollo-admin-tags=${{ github.event.inputs.account }}/apollo-adminservice:${{ github.event.inputs.version }},${{ github.event.inputs.account }}/apollo-adminservice:latest" >> $GITHUB_OUTPUT
-            echo "apollo-portal-tags=${{ github.event.inputs.account }}/apollo-portal:${{ github.event.inputs.version }},${{ github.event.inputs.account }}/apollo-portal:latest" >> $GITHUB_OUTPUT
+            echo "apollo-config-tags=${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-configservice:${{ github.event.inputs.version }},${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-configservice:latest" >> $GITHUB_OUTPUT
+            echo "apollo-admin-tags=${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-adminservice:${{ github.event.inputs.version }},${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-adminservice:latest" >> $GITHUB_OUTPUT
+            echo "apollo-portal-tags=${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-portal:${{ github.event.inputs.version }},${{ vars.DOCKER_REGISTRY }}/${{ github.event.inputs.account }}/apollo-portal:latest" >> $GITHUB_OUTPUT
           fi
   publish:
     needs: check
