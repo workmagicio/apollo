@@ -64,7 +64,7 @@ public class OidcUserInfoHolder implements UserInfoHolder {
     if (principal instanceof OidcUser) {
       UserInfo userInfo = new UserInfo();
       OidcUser oidcUser = (OidcUser) principal;
-      userInfo.setUserId(oidcUser.getSubject());
+      userInfo.setUserId(oidcUser.getEmail().split("@")[0]);
       userInfo.setName(
           OidcUserInfoUtil.getOidcUserDisplayName(oidcUser, this.oidcExtendProperties));
       userInfo.setEmail(oidcUser.getEmail());

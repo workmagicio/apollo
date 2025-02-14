@@ -83,7 +83,7 @@ public class AuthConfiguration {
 
   private static final String[] BY_PASS_URLS = {"/prometheus/**", "/metrics/**", "/openapi/**",
       "/vendor/**", "/styles/**", "/scripts/**", "/views/**", "/img/**", "/i18n/**", "/prefix-path",
-      "/health"};
+      "/health","/signin/**"};
 
   /**
    * spring.profiles.active = auth
@@ -402,16 +402,24 @@ public class AuthConfiguration {
       http.csrf().disable();
       http.authorizeRequests(requests -> requests.antMatchers(BY_PASS_URLS).permitAll());
       http.authorizeRequests(requests -> requests.anyRequest().authenticated());
-      http.oauth2Login(configure ->
-          configure.clientRegistrationRepository(
-              new ExcludeClientCredentialsClientRegistrationRepository(
-                  this.clientRegistrationRepository)));
+      http.oauth2Login(configure -> {
+                configure.clientRegistrationRepository(
+                        new ExcludeClientCredentialsClientRegistrationRepository(
+                                this.clientRegistrationRepository));
+                configure.loginPage("/signin");
+
+              }
+          );
       http.oauth2Client();
       http.logout(configure -> {
-        configure.logoutUrl("/user/logout");
+        configure.logoutUrl("/user/logout").invalidateHttpSession(true).clearAuthentication(true).deleteCookies(
+                "JSESSIONID").logoutSuccessUrl(
+                "/signin?#/logout");
         OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(
             this.clientRegistrationRepository);
-        logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
+        logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/signin");
+        logoutSuccessHandler.setDefaultTargetUrl("/signin");
+      //  logoutSuccessHandler.setTargetUrlParameter("");
         configure.logoutSuccessHandler(logoutSuccessHandler);
       });
       // make jwt optional
