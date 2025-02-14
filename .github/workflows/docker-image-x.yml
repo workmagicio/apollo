@@ -66,15 +66,15 @@ jobs:
           registry: ${{ github.event.inputs.registry }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v2
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v2
       - name: Build and push apollo-configservice
         uses: docker/build-push-action@v3
         with:
           context: ./apollo-configservice/target
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
           file: ./apollo-configservice/src/main/docker/Dockerfile
           push: true
           build-args: VERSION=${{ github.event.inputs.version }}
@@ -83,7 +83,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: ./apollo-adminservice/target
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
           file: ./apollo-adminservice/src/main/docker/Dockerfile
           push: true
           build-args: VERSION=${{ github.event.inputs.version }}
@@ -92,7 +92,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: ./apollo-portal/target
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
           file: ./apollo-portal/src/main/docker/Dockerfile
           push: true
           build-args: VERSION=${{ github.event.inputs.version }}
