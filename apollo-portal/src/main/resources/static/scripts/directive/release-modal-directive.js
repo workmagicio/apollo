@@ -19,7 +19,7 @@ directive_module.directive('releasemodal', releaseModalDirective);
 function releaseModalDirective($translate, toastr, AppUtil, EventManager, ReleaseService, NamespaceBranchService) {
     return {
         restrict: 'E',
-        templateUrl: AppUtil.prefixPath() + '/views/component/release-modal.html',
+        templateUrl: AppUtil.prefixPath() + '/views/component/release-modal-diff.html',
         transclude: true,
         replace: true,
         scope: {
@@ -38,12 +38,31 @@ function releaseModalDirective($translate, toastr, AppUtil, EventManager, Releas
             scope.releaseComment = '';
             scope.isEmergencyPublish = false;
 
+            scope.showDiffViewer = showDiffViewer;
+            scope.hideDiffViewer = hideDiffViewer;
+            scope.releaseAfterCheckChange = false;
+            scope.releaseItemsNeedToCheck = {};
+            scope.releaseItemsAllChecked = false;
+
             EventManager.subscribe(EventManager.EventType.PUBLISH_NAMESPACE,
                 function (context) {
 
                     var namespace = context.namespace;
                     scope.toReleaseNamespace = context.namespace;
                     scope.isEmergencyPublish = !!context.isEmergencyPublish;
+
+                    if (scope.toReleaseNamespace.viewName === 'frontend' || scope.toReleaseNamespace.parentAppId === '123456') {
+                    scope.releaseAfterCheckChange = true;
+                    }
+
+                    if (scope.releaseAfterCheckChange) {
+                    namespace.items
+                        .filter((item) => item.isModified)
+                        .map((item) => {
+                        scope.releaseItemsNeedToCheck[item.$$hashKey] = false;
+                        return item;
+                        });
+                    }
 
                     var date = new Date().Format("yyyyMMddhhmmss");
                     if (namespace.mergeAndPublish) {
@@ -175,8 +194,26 @@ function releaseModalDirective($translate, toastr, AppUtil, EventManager, Releas
                 scope.isComparePublished = type === 'compareWithPublishedValue';
                 scope.isNoCompare = type === 'release';
             }
+
+            function showDiffViewer(key, oldValue, newValue) {
+                AppUtil.showModal('#diffViewer');
+                if (typeof window.renderDiffViewer === 'function') {
+                    window.renderDiffViewer(oldValue, newValue);
+                }
+                if (scope.releaseAfterCheckChange) {
+                    if (scope.releaseItemsNeedToCheck[key] === false) {
+                        scope.releaseItemsNeedToCheck[key] = true;
+                    }
+                    scope.releaseItemsAllChecked = Object.values(scope.releaseItemsNeedToCheck).every((item) => item === true);
+                }
+            }
+
+            function hideDiffViewer() {
+                AppUtil.hideModal('#diffViewer');
+                if (typeof window.unmountDiffViewer === 'function') {
+                    window.unmountDiffViewer();
+                }
+            }
         }
     }
 }
-
-

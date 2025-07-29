@@ -71,7 +71,7 @@ public class OidcAuthenticationSuccessEventListener implements
   }
 
   private void oidcUserLogin(OidcUser oidcUser) {
-    String subject = oidcUser.getSubject();
+    String subject = oidcUser.getEmail().split("@")[0];
     String userDisplayName = OidcUserInfoUtil.getOidcUserDisplayName(oidcUser,
         this.oidcExtendProperties);
     String email = oidcUser.getEmail();

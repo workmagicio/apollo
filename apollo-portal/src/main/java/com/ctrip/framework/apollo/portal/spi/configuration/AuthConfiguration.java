@@ -83,6 +83,7 @@ public class AuthConfiguration {
 
   private static final String[] BY_PASS_URLS = {"/prometheus/**", "/metrics/**", "/openapi/**",
       "/vendor/**", "/styles/**", "/scripts/**", "/views/**", "/img/**", "/i18n/**", "/prefix-path",
+      "/signin/**",
       "/health"};
 
   /**
@@ -403,15 +404,20 @@ public class AuthConfiguration {
       http.authorizeRequests(requests -> requests.antMatchers(BY_PASS_URLS).permitAll());
       http.authorizeRequests(requests -> requests.anyRequest().authenticated());
       http.oauth2Login(configure ->
-          configure.clientRegistrationRepository(
+          configure.loginPage("/signin").clientRegistrationRepository(
               new ExcludeClientCredentialsClientRegistrationRepository(
                   this.clientRegistrationRepository)));
       http.oauth2Client();
       http.logout(configure -> {
         configure.logoutUrl("/user/logout");
+        configure.invalidateHttpSession(true);
+        configure.clearAuthentication(true);
+        configure.deleteCookies("JSESSIONID");
+        configure.logoutSuccessUrl("/signin?#/logout");
         OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(
             this.clientRegistrationRepository);
-        logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
+        logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/signin");
+        logoutSuccessHandler.setDefaultTargetUrl("/signin");
         configure.logoutSuccessHandler(logoutSuccessHandler);
       });
       // make jwt optional

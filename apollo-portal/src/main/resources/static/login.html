@@ -204,7 +204,7 @@
             height: auto;
             font-weight: normal;
             padding: 14px 0;
-            text-transform: uppercase;
+            /*text-transform: uppercase;*/
             border: none;
             border-radius: 0px;
             box-shadow: none;
@@ -246,6 +246,9 @@
             color: #fff;
             background-color: #2D3B55;
         }
+        .lark-login {
+            margin-top: 34px;
+        }
 
     </style>
 </head>
@@ -260,6 +263,7 @@
                         <div class="col-lg-12">
                             <form id="login-form" action="signin" method="post" role="form" style="display: block;">
                                 <p class="text-center"><img src="img/logo-detail.png" style="width: 500px;"></p>
+<!--
                                 <div class="form-group">
                                     <input type="text" name="username" tabindex="1" class="form-control"
                                            placeholder="Username" value="">
@@ -275,6 +279,12 @@
                                     <input type="submit" name="login-submit" id="login-submit" tabindex="4"
                                            class="form-control btn btn-login" value="{{'Login.Login' | translate }}">
                                 </div>
+-->
+
+                                <div class="lark-login">
+                                    <a class="form-control btn btn-login" href="/oauth2/authorization/lark-oidc">Login with Lark </a>
+                                </div>
+
                             </form>
                         </div>
                     </div>

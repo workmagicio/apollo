@@ -27,6 +27,7 @@
     <link rel="stylesheet" type="text/css" href="vendor/jquery-plugin/textareafullscreen.css">
     <link rel="stylesheet" type="text/css" media='all' href="vendor/angular/loading-bar.min.css">
     <link rel="stylesheet" type="text/css" href="styles/common-style.css">
+    <link rel="stylesheet" type="text/css" href="vendor/json-diff/index.css">
 </head>
 
 <body>
@@ -233,6 +234,7 @@
 
             <releasemodal app-id="pageContext.appId" env="pageContext.env" cluster="pageContext.clusterName">
             </releasemodal>
+            <diffviewer app-id="pageContext.appId" env="pageContext.env" cluster="pageContext.clusterName"></diffviewer>
 
             <itemmodal to-operation-namespace="toOperationNamespace" app-id="pageContext.appId" env="pageContext.env"
                 cluster="pageContext.clusterName" item="item">
@@ -409,6 +411,7 @@
     <script src="vendor/ui-ace/mode-json.js" type="text/javascript"></script>
     <script src="vendor/ui-ace/worker-json.js" type="text/javascript"></script>
     <script src="vendor/ui-ace/worker-xml.js" type="text/javascript"></script>
+    <script src="vendor/json-diff/diff.js" type="text/javascript"></script>
 
 
 
@@ -451,6 +454,7 @@
     <script type="application/javascript" src="scripts/directive/publish-deny-modal-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/delete-namespace-modal-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/import-namespace-modal-directive.js"></script>
+    <script type="application/javascript" src="scripts/directive/diff-viewer-directive.js"></script>
 
     <!--controller-->
     <script type="application/javascript" src="scripts/controller/config/ConfigNamespaceController.js"></script>
