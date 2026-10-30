@@ -1173,3 +1173,145 @@ table th {
     width: 16px;
     height: 16px;
 }
+
+/* json flag editor (visual editing of {"id": {"flag": true}} / {"id": ["value"]} values) */
+.json-flag-editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.json-flag-editor-toolbar .form-inline > * {
+    margin-right: 6px;
+}
+
+.json-flag-editor-list {
+    max-height: 55vh;
+    overflow-y: auto;
+    border: 1px solid #e5e5e5;
+}
+
+.json-flag-editor-list .table {
+    margin-bottom: 0;
+}
+
+.json-flag-editor-list td {
+    vertical-align: middle !important;
+}
+
+.json-flag-editor-id {
+    width: 90px;
+    font-family: Menlo, Monaco, Consolas, monospace;
+    font-weight: bold;
+}
+
+.json-flag-editor-ops {
+    width: 36px;
+    text-align: center;
+}
+
+.json-flag-editor-ops a {
+    color: #999;
+}
+
+.json-flag-editor-ops a:hover {
+    color: #d9534f;
+}
+
+.json-flag-editor-highlight > td {
+    background-color: #fcf8e3 !important;
+}
+
+.json-flag-chip {
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+    padding: 1px 4px 1px 8px;
+    border: 1px solid #bce8f1;
+    border-radius: 10px;
+    background: #d9edf7;
+    white-space: nowrap;
+}
+
+.json-flag-chip a {
+    text-decoration: none;
+}
+
+.json-flag-chip-name {
+    color: #31708f;
+}
+
+.json-flag-chip-remove {
+    margin-left: 4px;
+    color: #999;
+    font-weight: bold;
+}
+
+.json-flag-chip-remove:hover {
+    color: #d9534f;
+}
+
+.json-flag-chip-static {
+    cursor: default;
+}
+
+.json-flag-chip-false {
+    border-color: #ddd;
+    background: #f5f5f5;
+}
+
+.json-flag-chip-false .json-flag-chip-name {
+    color: #999;
+    text-decoration: line-through;
+}
+
+.json-flag-chip-other {
+    border-color: #faebcc;
+    background: #fcf8e3;
+}
+
+.json-flag-chip-other .json-flag-chip-name {
+    color: #8a6d3b;
+    cursor: default;
+}
+
+input.json-flag-add {
+    width: 150px;
+    padding: 1px 6px;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    outline: none;
+}
+
+input.json-flag-add:focus {
+    border-color: #66afe9;
+}
+
+.json-flag-editor-changes {
+    margin-top: 10px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.json-flag-editor-changes ul {
+    margin: 4px 0 0;
+    padding-left: 20px;
+}
+
+.json-flag-change-item {
+    margin-left: 8px;
+}
+
+.json-check-errors {
+    color: red;
+}
+
+.json-check-errors ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.json-check-warning {
+    color: #8a6d3b;
+}

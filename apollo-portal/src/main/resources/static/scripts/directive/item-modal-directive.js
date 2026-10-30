@@ -41,6 +41,8 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
             scope.showHiddenChars = showHiddenChars;
             scope.changeType = changeType;
             scope.validateItemValue = validateItemValue;
+            scope.enterVisualMode = enterVisualMode;
+            scope.exitVisualMode = exitVisualMode;
 
             $('#itemModal').on('show.bs.modal', function (e) {
                 scope.showHiddenCharsContext = false;
@@ -48,9 +50,20 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
                 scope.valueWithHiddenChars = $sce.trustAsHtml('');
             });
 
+            // a new item object is assigned every time the modal is opened for create / edit
+            scope.$watch('item', function (item) {
+                if (!item) {
+                    return;
+                }
+                scope.visualMode = false;
+                scope.visualBaseline = item.value;
+                validateItemValue();
+            });
+
             $("#valueEditor").textareafullscreen();
 
             function validateItemValue() {
+                resetJsonCheck();
                 if (scope.item.type === '1') {
                     //check whether the Number format is correct
                     let regNumber = /-[0-9]+(\\.[0-9]+)?|[0-9]+(\\.[0-9]+)?/;
@@ -60,10 +73,14 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
                         scope.showNumberError = true;
                     }
                 } else if (scope.item.type === '3') {
-                    detectJSON();
+                    scope.showNumberError = false;
+                    detectJSON(true);
                 } else {
                     scope.showNumberError = false;
                     scope.showJsonError = false;
+                    if (scope.item.type !== '2') {
+                        detectJSON(false);
+                    }
                 }
             }
 
@@ -190,18 +207,62 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
                 validateItemValue();
             }
 
-            function detectJSON() {
+            function resetJsonCheck() {
+                scope.showJsonError = false;
+                scope.jsonErrorText = '';
+                scope.jsonDuplicateTexts = [];
+                scope.jsonWarningText = '';
+                scope.canVisualEdit = false;
+            }
+
+            // isJsonType: the item is declared as JSON, so any problem blocks submitting.
+            // Otherwise only a String value that looks like JSON is checked: syntax problems are a
+            // warning (it may really be plain text), duplicate keys in valid JSON still block.
+            function detectJSON(isJsonType) {
                 var value = scope.item.value;
+                if (!isJsonType && !/^\s*[\{\[]/.test(value || '')) {
+                    return;
+                }
                 if (!value) {
                     scope.showJsonError = true;
                     return;
                 }
-                try {
-                    JSON.parse(value);
-                    scope.showJsonError = false;
-                } catch(e) {
-                    scope.showJsonError = true;
+                var result = JsonStrictParser.parse(value);
+                var errorText = result.ok ? '' : describeJsonError(result.error);
+                var duplicateTexts = result.duplicates.map(function (duplicate) {
+                    return $translate.instant('Component.ConfigItem.JsonDuplicateKey', {
+                        key: duplicate.path.concat([duplicate.key]).join(' › '),
+                        lines: duplicate.lines.join(', ')
+                    });
+                });
+                scope.canVisualEdit = result.ok && !!jsonFlagMapKind(result.value);
+                if (isJsonType) {
+                    scope.showJsonError = !result.ok || duplicateTexts.length > 0;
+                    scope.jsonErrorText = errorText;
+                    scope.jsonDuplicateTexts = duplicateTexts;
+                } else if (result.ok) {
+                    scope.showJsonError = duplicateTexts.length > 0;
+                    scope.jsonDuplicateTexts = duplicateTexts;
+                } else {
+                    scope.jsonWarningText = $translate.instant('Component.ConfigItem.JsonLooksInvalid') + errorText;
                 }
+            }
+
+            function describeJsonError(error) {
+                var message = $translate.instant('JsonCheck.' + error.code, error);
+                if (error.code === 'Empty') {
+                    return message;
+                }
+                return $translate.instant('JsonCheck.Position', error) + message;
+            }
+
+            function enterVisualMode() {
+                scope.visualMode = true;
+            }
+
+            function exitVisualMode() {
+                scope.visualMode = false;
+                validateItemValue();
             }
 
             function showHiddenChars() {
