@@ -15,85 +15,53 @@
 #
 name: Publish Docker Image X
 
+# Builds and pushes only apollo-portal: config / admin service run the upstream apolloconfig images.
 on:
   workflow_dispatch:
     inputs:
       registry:
         description: 'registry'
         required: true
+        default: 'docker.io'
       organize:
         description: 'organize'
         required: true
+        default: 'workmagic'
       version:
-        description: 'version'
+        description: 'version, must equal <revision> in pom.xml'
+        required: true
+        default: '2.3.3-SNAPSHOT'
+      tag:
+        description: 'image tag, use a new one for every release (e.g. 2.3.3-wm.1)'
         required: true
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    outputs:
-      apollo-config-tags: ${{ steps.check-tags.outputs.apollo-config-tags }}
-      apollo-admin-tags: ${{ steps.check-tags.outputs.apollo-admin-tags }}
-      apollo-portal-tags: ${{ steps.check-tags.outputs.apollo-portal-tags }}
-    steps:
-      - id: check-tags
-        name: Check tags
-        run: |
-          if [[ ${{ github.event.inputs.version }} == *-SNAPSHOT ]]; then
-            echo "apollo-config-tags=${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-configservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "apollo-admin-tags=${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-adminservice:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "apollo-portal-tags=${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-portal:${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "apollo-config-tags=${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-configservice:${{ github.event.inputs.version }},${{ github.event.inputs.registry }}/${{ github.event.inputs.account }}/apollo-configservice:latest" >> $GITHUB_OUTPUT
-            echo "apollo-admin-tags=${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-adminservice:${{ github.event.inputs.version }},${{ github.event.inputs.registry }}/${{ github.event.inputs.account }}/apollo-adminservice:latest" >> $GITHUB_OUTPUT
-            echo "apollo-portal-tags=${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-portal:${{ github.event.inputs.version }},${{ github.event.inputs.registry }}/${{ github.event.inputs.account }}/apollo-portal:latest" >> $GITHUB_OUTPUT
-          fi
   publish:
-    needs: check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: 8
       - name: Build package
         run: ./scripts/build.sh
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
+      - name: Login to registry
+        uses: docker/login-action@v3
         with:
           registry: ${{ github.event.inputs.registry }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build and push apollo-configservice
-        uses: docker/build-push-action@v3
-        with:
-          context: ./apollo-configservice/target
-          platforms: linux/amd64,linux/arm64
-          file: ./apollo-configservice/src/main/docker/Dockerfile
-          push: true
-          build-args: VERSION=${{ github.event.inputs.version }}
-          tags: ${{ needs.check.outputs.apollo-config-tags }}
-      - name: Build and push apollo-adminservice
-        uses: docker/build-push-action@v3
-        with:
-          context: ./apollo-adminservice/target
-          platforms: linux/amd64,linux/arm64
-          file: ./apollo-adminservice/src/main/docker/Dockerfile
-          push: true
-          build-args: VERSION=${{ github.event.inputs.version }}
-          tags: ${{ needs.check.outputs.apollo-admin-tags }}
+        uses: docker/setup-buildx-action@v3
       - name: Build and push apollo-portal
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: ./apollo-portal/target
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ./apollo-portal/src/main/docker/Dockerfile
           push: true
           build-args: VERSION=${{ github.event.inputs.version }}
-          tags: ${{ needs.check.outputs.apollo-portal-tags }}
+          tags: ${{ github.event.inputs.registry }}/${{ github.event.inputs.organize }}/apollo-portal:${{ github.event.inputs.tag }}
