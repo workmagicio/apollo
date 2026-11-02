@@ -236,7 +236,8 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
                         lines: duplicate.lines.join(', ')
                     });
                 });
-                scope.canVisualEdit = result.ok && !!jsonFlagMapKind(result.value);
+                // judged on the value the editor would open (duplicates merged), not on JSON.parse's
+                scope.canVisualEdit = result.ok && !!jsonFlagMapParse(value);
                 if (isJsonType) {
                     scope.showJsonError = !result.ok || duplicateTexts.length > 0;
                     scope.jsonErrorText = errorText;

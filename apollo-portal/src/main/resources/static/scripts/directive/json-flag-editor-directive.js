@@ -49,6 +49,17 @@ function jsonFlagMapKind(value) {
     return isList ? 'list' : null;
 }
 
+/**
+ * Reads a config value the way the visual editor does (duplicate keys merged) as
+ * {kind, value, duplicates}, or null when the editor cannot take it: not one of the two shapes,
+ * or holding numbers it would not write back unchanged.
+ */
+function jsonFlagMapParse(text) {
+    var parsed = JsonStrictParser.parse(text || '', {mergeDuplicates: true});
+    var kind = parsed.ok && parsed.exactNumbers && jsonFlagMapKind(parsed.value);
+    return kind ? {kind: kind, value: parsed.value, duplicates: parsed.duplicates} : null;
+}
+
 function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
     return {
         restrict: 'E',
@@ -63,13 +74,15 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
 
             var FLAG_NAME_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
-            // Both shapes are edited as {id: {name: value}}; a 'list' entry ["a", "b"] becomes
-            // {"a": true, "b": true} and is turned back into an array when serialized.
+            // {id: entry}: a 'flags' entry is {name: value}, a 'list' entry stays an array so its
+            // order is kept; its items read as flags set to true. Maps have no prototype, so
+            // "__proto__" is an ordinary tenant id or flag name.
             var kind = 'flags';
-            var data = {};
-            var baselineData = {};
+            var data = Object.create(null);
+            var baselineData = Object.create(null);
             var indent = 4;
 
+            scope.unsupported = false;
             scope.isList = false;
             scope.filter = {text: '', flag: ''};
             scope.newTenant = {id: ''};
@@ -117,19 +130,24 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
 
             function init() {
                 var source = scope.value || '';
-                var parsed = JsonStrictParser.parse(source, {mergeDuplicates: true});
-                kind = (parsed.ok && jsonFlagMapKind(parsed.value)) || 'flags';
+                var parsed = jsonFlagMapParse(source);
+                if (!parsed) {
+                    // the entry link is only offered for values this editor can take; never rewrite one it cannot
+                    scope.unsupported = true;
+                    return;
+                }
+                kind = parsed.kind;
                 scope.isList = kind === 'list';
-                data = parsed.ok && jsonFlagMapKind(parsed.value) ? toFlagShape(parsed.value, scope.dedupedItems) : {};
+                data = toEditShape(parsed.value, scope.dedupedItems);
 
                 var baselineParsed = JsonStrictParser.parse(scope.baseline || '');
                 baselineData = baselineParsed.ok && jsonFlagMapKind(baselineParsed.value) === kind
-                    ? toFlagShape(baselineParsed.value, []) : {};
+                    ? toEditShape(baselineParsed.value, []) : Object.create(null);
 
                 var indentMatch = /\n([ \t]+)\S/.exec(source);
                 indent = indentMatch ? indentMatch[1] : (source.trim().indexOf('\n') < 0 ? 0 : 4);
 
-                scope.mergedDuplicates = (parsed.duplicates || []).map(function (duplicate) {
+                scope.mergedDuplicates = parsed.duplicates.map(function (duplicate) {
                     return {
                         key: duplicate.path.concat([duplicate.key]).join(' › '),
                         lines: duplicate.lines.join(', ')
@@ -143,45 +161,39 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                 }
             }
 
-            // dedupedItems collects list items that appeared more than once in the same entry
-            function toFlagShape(value, dedupedItems) {
-                if (kind !== 'list') {
-                    return value;
-                }
-                var shaped = {};
+            // dedupedItems collects list items that appeared more than once in the same entry;
+            // only the first of them is kept, where it was
+            function toEditShape(value, dedupedItems) {
+                var shaped = Object.create(null);
                 Object.keys(value).forEach(function (id) {
-                    var counts = {};
-                    shaped[id] = {};
-                    value[id].forEach(function (item) {
-                        counts[item] = (counts[item] || 0) + 1;
-                        shaped[id][item] = true;
+                    if (kind === 'list') {
+                        var counts = Object.create(null);
+                        shaped[id] = value[id].filter(function (item) {
+                            counts[item] = (counts[item] || 0) + 1;
+                            return counts[item] === 1;
+                        });
+                        shaped[id].forEach(function (item) {
+                            if (counts[item] > 1) {
+                                dedupedItems.push({id: id, value: item, count: counts[item]});
+                            }
+                        });
+                        return;
+                    }
+                    var flags = Object.create(null);
+                    Object.keys(value[id]).forEach(function (name) {
+                        flags[name] = value[id][name];
                     });
-                    Object.keys(counts).forEach(function (item) {
-                        if (counts[item] > 1) {
-                            dedupedItems.push({id: id, value: item, count: counts[item]});
-                        }
-                    });
+                    shaped[id] = flags;
                 });
                 return shaped;
-            }
-
-            function serialize() {
-                if (kind !== 'list') {
-                    return data;
-                }
-                var list = {};
-                Object.keys(data).forEach(function (id) {
-                    list[id] = Object.keys(data[id]);
-                });
-                return list;
             }
 
             function refresh() {
                 scope.rows = Object.keys(data).map(function (id) {
                     return {
                         id: id,
-                        flags: Object.keys(data[id]).map(function (name) {
-                            return {name: name, value: data[id][name]};
+                        flags: flagNames(data[id]).map(function (name) {
+                            return {name: name, value: flagValue(data[id], name)};
                         })
                     };
                 });
@@ -191,7 +203,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
 
             function writeBack() {
                 refresh();
-                scope.value = JSON.stringify(serialize(), null, indent);
+                scope.value = JSON.stringify(data, null, indent);
                 // let the two-way binding reach the parent before it re-validates
                 $timeout(function () {
                     scope.onChange();
@@ -199,10 +211,10 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
             }
 
             function collectKnownFlags() {
-                var counts = {};
+                var counts = Object.create(null);
                 [baselineData, data].forEach(function (source) {
                     Object.keys(source).forEach(function (id) {
-                        Object.keys(source[id]).forEach(function (name) {
+                        flagNames(source[id]).forEach(function (name) {
                             if (!has(counts, name)) {
                                 counts[name] = 0;
                             }
@@ -210,8 +222,8 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                     });
                 });
                 Object.keys(data).forEach(function (id) {
-                    Object.keys(data[id]).forEach(function (name) {
-                        if (data[id][name] === true) {
+                    flagNames(data[id]).forEach(function (name) {
+                        if (flagValue(data[id], name) === true) {
                             counts[name]++;
                         }
                     });
@@ -228,7 +240,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                 if (text && row.id.indexOf(text) < 0) {
                     return false;
                 }
-                if (scope.filter.flag && data[row.id][scope.filter.flag] !== true) {
+                if (scope.filter.flag && flagValue(data[row.id], scope.filter.flag) !== true) {
                     return false;
                 }
                 return true;
@@ -243,7 +255,12 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
             }
 
             function removeFlag(row, flag) {
-                delete data[row.id][flag.name];
+                var entry = data[row.id];
+                if (Array.isArray(entry)) {
+                    entry.splice(entry.indexOf(flag.name), 1);
+                } else {
+                    delete entry[flag.name];
+                }
                 writeBack();
             }
 
@@ -265,7 +282,11 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                     && !window.confirm($translate.instant('JsonFlagEditor.ConfirmNew' + label, {flag: name}))) {
                     return;
                 }
-                data[row.id][name] = true;
+                if (Array.isArray(data[row.id])) {
+                    data[row.id].push(name);
+                } else {
+                    data[row.id][name] = true;
+                }
                 writeBack();
             }
 
@@ -288,7 +309,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                     toastr.warning($translate.instant('JsonFlagEditor.TenantIdMustBeNumber'));
                     return;
                 }
-                data[id] = {};
+                data[id] = kind === 'list' ? [] : Object.create(null);
                 scope.newTenant.id = '';
                 writeBack();
                 locateRow(id);
@@ -336,7 +357,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
             }
 
             function hasFlag(id, name) {
-                return has(data, id) && has(data[id], name);
+                return has(data, id) && entryHas(data[id], name);
             }
 
             function isKnownFlag(name) {
@@ -355,6 +376,22 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
         return Object.prototype.hasOwnProperty.call(obj, key);
     }
 
+    // an entry is {name: value}, or a list whose items read as flags set to true
+    function flagNames(entry) {
+        return Array.isArray(entry) ? entry.slice() : Object.keys(entry);
+    }
+
+    function entryHas(entry, name) {
+        return Array.isArray(entry) ? entry.indexOf(name) >= 0 : has(entry, name);
+    }
+
+    function flagValue(entry, name) {
+        if (!entryHas(entry, name)) {
+            return undefined;
+        }
+        return Array.isArray(entry) ? true : entry[name];
+    }
+
     function diff(before, after) {
         var changes = [];
         var ids = Object.keys(after).concat(Object.keys(before).filter(function (id) {
@@ -362,8 +399,8 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
         }));
         ids.forEach(function (id) {
             if (!has(before, id)) {
-                changes.push({type: 'add', id: id, items: Object.keys(after[id]).map(function (name) {
-                    return {op: 'add', name: name, value: after[id][name]};
+                changes.push({type: 'add', id: id, items: flagNames(after[id]).map(function (name) {
+                    return {op: 'add', name: name, value: flagValue(after[id], name)};
                 })});
                 return;
             }
@@ -372,15 +409,17 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                 return;
             }
             var items = [];
-            Object.keys(after[id]).forEach(function (name) {
-                if (!has(before[id], name)) {
-                    items.push({op: 'add', name: name, value: after[id][name]});
-                } else if (before[id][name] !== after[id][name]) {
-                    items.push({op: 'change', name: name, from: before[id][name], value: after[id][name]});
+            flagNames(after[id]).forEach(function (name) {
+                var from = flagValue(before[id], name);
+                var value = flagValue(after[id], name);
+                if (!entryHas(before[id], name)) {
+                    items.push({op: 'add', name: name, value: value});
+                } else if (from !== value) {
+                    items.push({op: 'change', name: name, from: from, value: value});
                 }
             });
-            Object.keys(before[id]).forEach(function (name) {
-                if (!has(after[id], name)) {
+            flagNames(before[id]).forEach(function (name) {
+                if (!entryHas(after[id], name)) {
                     items.push({op: 'remove', name: name});
                 }
             });
