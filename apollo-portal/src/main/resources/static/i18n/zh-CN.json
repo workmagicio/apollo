@@ -80,6 +80,7 @@
   "Component.ConfigItem.ItemTypeBoolean": "Boolean",
   "Component.ConfigItem.ItemTypeJson": "JSON",
   "Component.ConfigItem.ItemNumberError": "非法 Number",
+  "Component.ConfigItem.ItemBooleanError": "布尔类型的值只能是 true 或 false",
   "Component.ConfigItem.ItemJsonError": "JSON 格式不正确",
   "Component.ConfigItem.ItemTypeTrue": "true",
   "Component.ConfigItem.ItemTypeFalse": "false",

@@ -80,6 +80,7 @@
   "Component.ConfigItem.ItemTypeBoolean": "Boolean",
   "Component.ConfigItem.ItemTypeJson": "JSON",
   "Component.ConfigItem.ItemNumberError": "Illegal Number",
+  "Component.ConfigItem.ItemBooleanError": "A Boolean value can only be true or false",
   "Component.ConfigItem.ItemJsonError": "JSON Incorrect format",
   "Component.ConfigItem.ItemTypeTrue": "True",
   "Component.ConfigItem.ItemTypeFalse": "False",

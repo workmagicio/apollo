@@ -63,6 +63,7 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
             $("#valueEditor").textareafullscreen();
 
             function validateItemValue() {
+                scope.showBooleanError = false;
                 resetJsonCheck();
                 if (scope.item.type === '1') {
                     //check whether the Number format is correct
@@ -78,13 +79,21 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
                 } else {
                     scope.showNumberError = false;
                     scope.showJsonError = false;
-                    if (scope.item.type !== '2') {
+                    if (scope.item.type === '2') {
+                        scope.showBooleanError = scope.item.value !== 'true' && scope.item.value !== 'false';
+                    } else {
                         detectJSON(false);
                     }
                 }
             }
 
             function doItem() {
+
+                // the value may have changed since it was last checked, so check it against the current type again
+                validateItemValue();
+                if (scope.showNumberError || scope.showJsonError || scope.showBooleanError) {
+                    return;
+                }
 
                 if (!scope.item.value) {
                     scope.item.value = "";
@@ -191,6 +200,8 @@ function itemModalDirective($translate, toastr, $sce, AppUtil, EventManager, Con
             }
 
             function changeType() {
+                // the visual editor only fits the value it was opened with; leaving it removes it from the page
+                scope.visualMode = false;
                 scope.showNumberError = false;
                 scope.showJsonError = false;
                 if (scope.item.type === '2') {
