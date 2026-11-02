@@ -861,6 +861,7 @@
   "JsonCheck.InvalidNumber": "无效的数字",
   "JsonCheck.TrailingContent": "JSON 结束后还有多余的内容",
   "JsonFlagEditor.DuplicatesMerged": "原内容里有重复的 Key，已自动合并（同名开关以后出现的为准），请核对下方的改动后再提交：",
+  "JsonFlagEditor.Unsupported": "这个值不能用可视化编辑（合并重复 Key 后的结构不支持，或含有会被改写的数字），请返回文本编辑。",
   "JsonFlagEditor.DuplicateItem": "「{{key}}」出现在第 {{lines}} 行",
   "JsonFlagEditor.SearchPlaceholder": "搜索租户 ID",
   "JsonFlagEditor.AllFlags": "全部开关",

@@ -15,6 +15,7 @@
       ~ limitations under the License.
       ~
     -->
+    <div class="alert alert-danger" ng-if="unsupported">{{'JsonFlagEditor.Unsupported' | translate }}</div>
     <div class="alert alert-warning" ng-if="mergedDuplicates.length">
         {{(isList ? 'JsonFlagEditor.DuplicatesMergedList' : 'JsonFlagEditor.DuplicatesMerged') | translate }}
         <ul>
@@ -32,7 +33,7 @@
         </ul>
     </div>
 
-    <div class="json-flag-editor-toolbar">
+    <div class="json-flag-editor-toolbar" ng-show="!unsupported">
         <div class="form-inline">
             <input type="text" class="form-control input-sm" ng-model="filter.text"
                 placeholder="{{'JsonFlagEditor.SearchPlaceholder' | translate }}">
@@ -54,7 +55,7 @@
         </div>
     </div>
 
-    <div class="json-flag-editor-list">
+    <div class="json-flag-editor-list" ng-show="!unsupported">
         <table class="table table-condensed table-hover">
             <tbody>
                 <tr ng-repeat="row in rows | filter:matchesFilter as visibleRows track by row.id"
@@ -93,7 +94,7 @@
         </datalist>
     </div>
 
-    <div class="json-flag-editor-changes">
+    <div class="json-flag-editor-changes" ng-show="!unsupported">
         <strong>{{'JsonFlagEditor.Changes' | translate:{count: changes.length} }}</strong>
         <span class="text-muted" ng-if="!changes.length">{{'JsonFlagEditor.NoChanges' | translate }}</span>
         <ul ng-if="changes.length">

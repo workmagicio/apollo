@@ -861,6 +861,7 @@
   "JsonCheck.InvalidNumber": "Invalid number",
   "JsonCheck.TrailingContent": "Unexpected content after the end of the JSON",
   "JsonFlagEditor.DuplicatesMerged": "The original value has duplicate keys. They were merged (for the same flag the later one wins). Review the changes below before submitting:",
+  "JsonFlagEditor.Unsupported": "This value can't be edited visually (its structure after merging duplicate keys is not supported, or it has numbers that would be rewritten). Go back to text editing.",
   "JsonFlagEditor.DuplicateItem": "\"{{key}}\" on lines {{lines}}",
   "JsonFlagEditor.SearchPlaceholder": "Search tenant ID",
   "JsonFlagEditor.AllFlags": "All flags",

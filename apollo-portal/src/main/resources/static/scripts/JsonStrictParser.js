@@ -20,10 +20,12 @@
  * duplicate, which is how hand-edited configs lose entries.
  *
  * JsonStrictParser.parse(text, {mergeDuplicates: true}) returns
- *   {ok: true, value: ..., duplicates: [{path: [...], key: '6', lines: [3, 120]}]}
+ *   {ok: true, value: ..., duplicates: [{path: [...], key: '6', lines: [3, 120]}], exactNumbers: true}
  *   {ok: false, error: {code: 'TrailingComma', line: 5, column: 9, near: '}'}, duplicates: [...]}
  * With mergeDuplicates, duplicate keys whose values are both objects are merged (later fields win)
  * and both arrays become their union; otherwise the last value wins, same as JSON.parse.
+ * exactNumbers is false when some number would not be written back as it was by JSON.stringify
+ * (9007199254740993 loses precision, 1.0 becomes 1, 1e3 becomes 1000).
  */
 var JsonStrictParser = (function () {
 
@@ -72,7 +74,8 @@ var JsonStrictParser = (function () {
         var mergeDuplicates = !!(options && options.mergeDuplicates);
         var pos = 0;
         var duplicates = [];
-        var duplicateIndex = {};
+        var duplicateIndex = Object.create(null);
+        var exactNumbers = true;
 
         function lineOf(offset) {
             var line = 1;
@@ -155,7 +158,8 @@ var JsonStrictParser = (function () {
 
         function parseObject(path) {
             var obj = {};
-            var keyOffsets = {};
+            // no prototype, so a "__proto__" key is recorded like any other
+            var keyOffsets = Object.create(null);
             pos++;
             skipWhitespace();
             if (text[pos] === '}') {
@@ -289,7 +293,11 @@ var JsonStrictParser = (function () {
                 fail('InvalidNumber');
             }
             pos += match[0].length;
-            return Number(match[0]);
+            var number = Number(match[0]);
+            if (String(number) !== match[0]) {
+                exactNumbers = false;
+            }
+            return number;
         }
 
         try {
@@ -302,7 +310,7 @@ var JsonStrictParser = (function () {
             if (pos < text.length) {
                 fail('TrailingContent');
             }
-            return {ok: true, value: value, duplicates: duplicates};
+            return {ok: true, value: value, duplicates: duplicates, exactNumbers: exactNumbers};
         } catch (e) {
             if (!e || !e.jsonStrictError) {
                 throw e;
