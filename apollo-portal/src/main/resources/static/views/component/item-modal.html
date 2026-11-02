@@ -103,10 +103,13 @@
                             ng-show="showHiddenCharsContext && hiddenCharCounter > 0"></div>
                     </div>
                     <div class="col-sm-10" valdr-form-group ng-show="item.type == '2'">
-                        <select class="form-control" name="value" ng-model="item.value">
+                        <select class="form-control" name="value" ng-model="item.value" ng-change="validateItemValue()">
                             <option value="true">{{'Component.ConfigItem.ItemTypeTrue' | translate }}</option>
                             <option value="false">{{'Component.ConfigItem.ItemTypeFalse' | translate }}</option>
                         </select>
+                        <div ng-show="showBooleanError" style="color:red">
+                            {{'Component.ConfigItem.ItemBooleanError' | translate }}
+                        </div>
                     </div>
 
 
@@ -137,7 +140,7 @@
                     {{'Common.Cancel' | translate }}
                 </button>
                 <button type="submit" class="btn btn-primary"
-                    ng-disabled="itemForm.$invalid || (item.addItemBtnDisabled && item.tableViewOperType == 'create') || showNumberError || showJsonError ">
+                    ng-disabled="itemForm.$invalid || (item.addItemBtnDisabled && item.tableViewOperType == 'create') || showNumberError || showJsonError || showBooleanError">
                     {{'Common.Submit' | translate }}
                 </button>
             </div>
