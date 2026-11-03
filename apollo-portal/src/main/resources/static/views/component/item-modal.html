@@ -56,7 +56,18 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" ng-if="visualMode">
+                    <label class="col-sm-2 control-label">
+                        {{'Component.ConfigItem.ItemValue' | translate }}
+                        <br>
+                        <a ng-click="exitVisualMode()">{{'Component.ConfigItem.BackToText' | translate }}</a>
+                    </label>
+                    <div class="col-sm-10">
+                        <jsonflageditor value="item.value" baseline="visualBaseline" on-change="validateItemValue()">
+                        </jsonflageditor>
+                    </div>
+                </div>
+                <div class="form-group" ng-show="!visualMode">
                     <label class="col-sm-2 control-label">{{'Component.ConfigItem.ItemValue' | translate }}</label>
                     <div class="col-sm-10" valdr-form-group ng-show="item.type != '2'">
                         <textarea id="valueEditor" name="value" class="form-control" rows="6" tabindex="2"
@@ -67,23 +78,38 @@
                         <br>
                         <!-- 格式化 -->
                         <a ng-show="item.type == '3'" ng-click="formatContent()">{{'Component.ConfigItem.FormatItemValue' | translate }}</a>
+                        &nbsp;
+                        <a ng-show="canVisualEdit" ng-click="enterVisualMode()">{{'Component.ConfigItem.VisualEdit' | translate }}</a>
                         <br>
                         <div ng-show="showNumberError" ng-model="showNumberError" style="color:red">
                             {{'Component.ConfigItem.ItemNumberError' | translate }}
                         </div>
-                        <div ng-show="showJsonError" ng-model="showJsonError" style="color:red">
-                            {{'Component.ConfigItem.ItemJsonError' | translate }}
+                        <div class="json-check-errors" ng-show="showJsonError">
+                            <div ng-show="jsonErrorText">{{jsonErrorText}}</div>
+                            <div ng-show="!jsonErrorText && !jsonDuplicateTexts.length">
+                                {{'Component.ConfigItem.ItemJsonError' | translate }}
+                            </div>
+                            <ul ng-show="jsonDuplicateTexts.length">
+                                <li ng-repeat="text in jsonDuplicateTexts track by $index">{{text}}</li>
+                            </ul>
+                            <div ng-show="jsonDuplicateTexts.length && canVisualEdit">
+                                {{'Component.ConfigItem.JsonDuplicateHint' | translate }}
+                            </div>
                         </div>
+                        <div class="json-check-warning" ng-show="jsonWarningText">{{jsonWarningText}}</div>
                         <div class="bg-info" ng-show="showHiddenCharsContext && hiddenCharCounter == 0">
                             {{'Component.ConfigItem.ItemValueNotHiddenChars' | translate }}</div>
                         <div class="bg-info" ng-bind-html="valueWithHiddenChars"
                             ng-show="showHiddenCharsContext && hiddenCharCounter > 0"></div>
                     </div>
                     <div class="col-sm-10" valdr-form-group ng-show="item.type == '2'">
-                        <select class="form-control" name="value" ng-model="item.value">
+                        <select class="form-control" name="value" ng-model="item.value" ng-change="validateItemValue()">
                             <option value="true">{{'Component.ConfigItem.ItemTypeTrue' | translate }}</option>
                             <option value="false">{{'Component.ConfigItem.ItemTypeFalse' | translate }}</option>
                         </select>
+                        <div ng-show="showBooleanError" style="color:red">
+                            {{'Component.ConfigItem.ItemBooleanError' | translate }}
+                        </div>
                     </div>
 
 
@@ -114,7 +140,7 @@
                     {{'Common.Cancel' | translate }}
                 </button>
                 <button type="submit" class="btn btn-primary"
-                    ng-disabled="itemForm.$invalid || (item.addItemBtnDisabled && item.tableViewOperType == 'create') || showNumberError || showJsonError ">
+                    ng-disabled="itemForm.$invalid || (item.addItemBtnDisabled && item.tableViewOperType == 'create') || showNumberError || showJsonError || showBooleanError">
                     {{'Common.Submit' | translate }}
                 </button>
             </div>
