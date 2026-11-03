@@ -26,7 +26,7 @@
     <link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
     <link rel="stylesheet" type="text/css" href="vendor/jquery-plugin/textareafullscreen.css">
     <link rel="stylesheet" type="text/css" media='all' href="vendor/angular/loading-bar.min.css">
-    <link rel="stylesheet" type="text/css" href="styles/common-style.css">
+    <link rel="stylesheet" type="text/css" href="styles/common-style.css?v=20261103">
     <link rel="stylesheet" type="text/css" href="vendor/json-diff/index.css">
 </head>
 
@@ -440,15 +440,16 @@
 
 
     <script type="application/javascript" src="scripts/AppUtils.js"></script>
-    <script type="application/javascript" src="scripts/JsonStrictParser.js"></script>
+    <!-- js/css here are cached for 10 days (Cloudflare and browsers): bump ?v= whenever one of the files with it changes -->
+    <script type="application/javascript" src="scripts/JsonStrictParser.js?v=20261103"></script>
 
     <!--directive-->
     <script type="application/javascript" src="scripts/directive/directive.js"></script>
     <script type="application/javascript" src="scripts/directive/namespace-panel-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/diff-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/release-modal-directive.js"></script>
-    <script type="application/javascript" src="scripts/directive/item-modal-directive.js"></script>
-    <script type="application/javascript" src="scripts/directive/json-flag-editor-directive.js"></script>
+    <script type="application/javascript" src="scripts/directive/item-modal-directive.js?v=20261103"></script>
+    <script type="application/javascript" src="scripts/directive/json-flag-editor-directive.js?v=20261103"></script>
     <script type="application/javascript" src="scripts/directive/show-text-modal-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/rollback-modal-directive.js"></script>
     <script type="application/javascript" src="scripts/directive/gray-release-rules-modal-directive.js"></script>
