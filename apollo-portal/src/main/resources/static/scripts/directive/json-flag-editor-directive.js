@@ -162,10 +162,10 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
             }
 
             // dedupedItems collects list items that appeared more than once in the same entry;
-            // only the first of them is kept, where it was
+            // only the first of them is kept, where it was. Ids and flag names keep their order.
             function toEditShape(value, dedupedItems) {
-                var shaped = Object.create(null);
-                Object.keys(value).forEach(function (id) {
+                var shaped = JsonStrictParser.setKeyOrder(Object.create(null), JsonStrictParser.keyOrder(value));
+                JsonStrictParser.keyOrder(value).forEach(function (id) {
                     if (kind === 'list') {
                         var counts = Object.create(null);
                         shaped[id] = value[id].filter(function (item) {
@@ -179,8 +179,9 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
                         });
                         return;
                     }
-                    var flags = Object.create(null);
-                    Object.keys(value[id]).forEach(function (name) {
+                    var names = JsonStrictParser.keyOrder(value[id]);
+                    var flags = JsonStrictParser.setKeyOrder(Object.create(null), names);
+                    names.forEach(function (name) {
                         flags[name] = value[id][name];
                     });
                     shaped[id] = flags;
@@ -189,7 +190,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
             }
 
             function refresh() {
-                scope.rows = Object.keys(data).map(function (id) {
+                scope.rows = JsonStrictParser.keyOrder(data).map(function (id) {
                     return {
                         id: id,
                         flags: flagNames(data[id]).map(function (name) {
@@ -203,7 +204,8 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
 
             function writeBack() {
                 refresh();
-                scope.value = JSON.stringify(data, null, indent);
+                // JSON.stringify would sort the tenant ids, turning a one-line change into a reordered value
+                scope.value = JsonStrictParser.stringify(data, indent);
                 // let the two-way binding reach the parent before it re-validates
                 $timeout(function () {
                     scope.onChange();
@@ -378,7 +380,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
 
     // an entry is {name: value}, or a list whose items read as flags set to true
     function flagNames(entry) {
-        return Array.isArray(entry) ? entry.slice() : Object.keys(entry);
+        return Array.isArray(entry) ? entry.slice() : JsonStrictParser.keyOrder(entry);
     }
 
     function entryHas(entry, name) {
@@ -394,7 +396,7 @@ function jsonFlagEditorDirective($translate, $timeout, toastr, AppUtil) {
 
     function diff(before, after) {
         var changes = [];
-        var ids = Object.keys(after).concat(Object.keys(before).filter(function (id) {
+        var ids = JsonStrictParser.keyOrder(after).concat(JsonStrictParser.keyOrder(before).filter(function (id) {
             return !has(after, id);
         }));
         ids.forEach(function (id) {

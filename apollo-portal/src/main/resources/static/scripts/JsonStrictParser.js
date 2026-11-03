@@ -26,14 +26,23 @@
  * and both arrays become their union; otherwise the last value wins, same as JSON.parse.
  * exactNumbers is false when some number would not be written back as it was by JSON.stringify
  * (9007199254740993 loses precision, 1.0 becomes 1, 1e3 becomes 1000).
+ *
+ * JS lists integer-like keys ("150346") in numeric order whatever order they were added in, so every
+ * parsed object also remembers the order its keys appeared in: keyOrder(obj) reads it and
+ * stringify(value, indent) writes it back, where JSON.stringify would sort tenant ids.
  */
 var JsonStrictParser = (function () {
 
     var NUMBER_PATTERN = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
     var CHINESE_PUNCTUATION = '，：“”‘’｛｝【】';
+    var KEY_ORDER = Symbol('keyOrder');
 
     function isPlainObject(value) {
         return value !== null && typeof value === 'object' && !Array.isArray(value);
+    }
+
+    function has(obj, key) {
+        return Object.prototype.hasOwnProperty.call(obj, key);
     }
 
     function setOwn(obj, key, value) {
@@ -41,18 +50,75 @@ var JsonStrictParser = (function () {
         Object.defineProperty(obj, key, {value: value, writable: true, enumerable: true, configurable: true});
     }
 
+    function setKeyOrder(obj, keys) {
+        Object.defineProperty(obj, KEY_ORDER, {value: keys.slice(), writable: true, configurable: true});
+        return obj;
+    }
+
+    // the recorded order of the keys obj still has, then keys added since (in JS order)
+    function keyOrder(obj) {
+        var listed = Object.create(null);
+        var keys = (obj[KEY_ORDER] || []).filter(function (key) {
+            if (listed[key] || !has(obj, key)) {
+                return false;
+            }
+            listed[key] = true;
+            return true;
+        });
+        return keys.concat(Object.keys(obj).filter(function (key) {
+            return !listed[key];
+        }));
+    }
+
+    // JSON.stringify(value, null, indent), except that objects keep their keyOrder
+    function stringify(value, indent) {
+        var unit = typeof indent === 'number' ? ' '.repeat(Math.min(Math.max(indent, 0), 10))
+            : String(indent || '').slice(0, 10);
+
+        function write(item, pad) {
+            var inner = pad + unit;
+            var parts;
+            if (Array.isArray(item)) {
+                parts = item.map(function (element) {
+                    return write(element, inner);
+                });
+                return wrap('[', parts, ']', pad, inner);
+            }
+            if (isPlainObject(item)) {
+                parts = keyOrder(item).map(function (key) {
+                    return JSON.stringify(key) + (unit ? ': ' : ':') + write(item[key], inner);
+                });
+                return wrap('{', parts, '}', pad, inner);
+            }
+            return JSON.stringify(item);
+        }
+
+        function wrap(open, parts, close, pad, inner) {
+            if (!parts.length) {
+                return open + close;
+            }
+            if (!unit) {
+                return open + parts.join(',') + close;
+            }
+            return open + '\n' + inner + parts.join(',\n' + inner) + '\n' + pad + close;
+        }
+
+        return write(value, '');
+    }
+
     // objects are merged key by key (later wins), arrays become their union, anything else: later wins
     function mergeValues(target, source) {
         if (isPlainObject(target) && isPlainObject(source)) {
             var merged = {};
-            Object.keys(target).forEach(function (key) {
+            keyOrder(target).forEach(function (key) {
                 setOwn(merged, key, target[key]);
             });
-            Object.keys(source).forEach(function (key) {
-                setOwn(merged, key, Object.prototype.hasOwnProperty.call(merged, key)
-                    ? mergeValues(merged[key], source[key]) : source[key]);
+            keyOrder(source).forEach(function (key) {
+                setOwn(merged, key, has(merged, key) ? mergeValues(merged[key], source[key]) : source[key]);
             });
-            return merged;
+            return setKeyOrder(merged, keyOrder(target).concat(keyOrder(source).filter(function (key) {
+                return !has(target, key);
+            })));
         }
         if (Array.isArray(target) && Array.isArray(source)) {
             var seen = target.map(function (element) {
@@ -160,11 +226,12 @@ var JsonStrictParser = (function () {
             var obj = {};
             // no prototype, so a "__proto__" key is recorded like any other
             var keyOffsets = Object.create(null);
+            var order = [];
             pos++;
             skipWhitespace();
             if (text[pos] === '}') {
                 pos++;
-                return obj;
+                return setKeyOrder(obj, order);
             }
             while (true) {
                 skipWhitespace();
@@ -185,13 +252,14 @@ var JsonStrictParser = (function () {
                 }
                 pos++;
                 var value = parseValue(path.concat([key]));
-                if (Object.prototype.hasOwnProperty.call(keyOffsets, key)) {
+                if (has(keyOffsets, key)) {
                     recordDuplicate(path, key, keyOffsets[key], keyOffset);
                     if (mergeDuplicates) {
                         value = mergeValues(obj[key], value);
                     }
                 } else {
                     keyOffsets[key] = keyOffset;
+                    order.push(key);
                 }
                 setOwn(obj, key, value);
 
@@ -208,7 +276,7 @@ var JsonStrictParser = (function () {
                 }
                 if (c === '}') {
                     pos++;
-                    return obj;
+                    return setKeyOrder(obj, order);
                 }
                 if (c === '"') {
                     fail('MissingComma');
@@ -337,6 +405,9 @@ var JsonStrictParser = (function () {
 
     return {
         parse: parse,
+        stringify: stringify,
+        keyOrder: keyOrder,
+        setKeyOrder: setKeyOrder,
         isPlainObject: isPlainObject
     };
 })();
